@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG 3D Space</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <span class="position-display">Position: <span id="position-text">5,5</span></span>
+            <span class="world-info">11x11 World</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="svg-container">
+            <svg id="space-svg" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+                <!-- Room geometry will be dynamically generated here -->
+            </svg>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="nav-grid">
+            <div></div>
+            <button class="nav-btn" id="nav-forward" data-direction="forward">↑</button>
+            <div></div>
+            <button class="nav-btn" id="nav-left" data-direction="left">←</button>
+            <div class="center-indicator"></div>
+            <button class="nav-btn" id="nav-right" data-direction="right">→</button>
+            <div></div>
+            <button class="nav-btn" id="nav-back" data-direction="back">↓</button>
+            <div></div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

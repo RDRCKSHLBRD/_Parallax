@@ -1,0 +1,210 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #ECF2E9; /* egyptian */
+    color: #282825; /* Seurat */
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background-color: #888b87; /* SilverFox */
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid #515151; /* Modern Button */
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 200;
+    color: #ECF2E9; /* egyptian */
+}
+
+/* Main content */
+.main-content {
+    flex: 1;
+    margin-top: 40px;
+   
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #343531; /* Floor */
+}
+
+.svg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#space-svg {
+    width: 90%;
+    height: 90%;
+    background-color: #e4ead8; /* outerWalls */
+    border: 2px solid #aab29a; /* interiorWall */
+    border-radius: 4px;
+}
+
+/* Footer navigation */
+.footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 90px;
+    width: 250px;
+    background-color: #b7bab5; /* Maybe */
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #515151; /* Modern Button */
+   
+}
+
+.nav-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 25px);
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    
+}
+
+.nav-btn {
+    width: 50px;
+    height: 25px;
+    background-color: #9DAA9F; /* NEW-Reed */
+    border: 1px solid #525445; /* St. Etienne */
+    color: #282825; /* Seurat */
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 1px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.1s ease;
+}
+
+.nav-btn:hover {
+    background-color: #AAB29A; /* Gallery */
+    transform: translateY(-1px);
+}
+
+.nav-btn:active {
+    background-color: #888e7c; /* Mosco */
+    transform: translateY(0);
+}
+
+.center-indicator {
+    width: 20px;
+    height: 20px;
+    background-color: #3f372a; /* Conte II */
+    border-radius: 50%;
+    border: 2px solid #515151; /* Modern Button */
+}
+
+/* SVG Room Elements */
+.room-floor {
+    fill: #343531; /* Floor */
+    stroke: #282825; /* Seurat */
+    stroke-width: 1;
+}
+
+.room-ceiling {
+    fill: #e4ead8; /* outerWalls */
+    stroke: #aab29a; /* interiorWall */
+    stroke-width: 1;
+}
+
+.room-wall-left {
+    fill: #dcddca; /* Amalfi */
+    stroke: #aab29a; /* interiorWall */
+    stroke-width: 1;
+}
+
+.room-wall-right {
+    fill: #CCD1B9; /* Snow Clouds III */
+    stroke: #aab29a; /* interiorWall */
+    stroke-width: 1;
+}
+
+.room-wall-back {
+    fill: #b8bca7; /* Placeholder II */
+    stroke: #aab29a; /* interiorWall */
+    stroke-width: 1;
+}
+
+.vanishing-line {
+    stroke: #888b87; /* SilverFox */
+    stroke-width: 1;
+    
+    fill: none;
+}
+
+.horizon-line {
+    stroke: #a5a2a2; /* Tech Support */
+    stroke-width: 1;
+    fill: none;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .header {
+        height: 35px;
+        padding: 0 15px;
+    }
+    
+    .header-content {
+        font-size: 12px;
+    }
+    
+    .main-content {
+        margin-top: 35px;
+        margin-bottom: 90px;
+    }
+    
+    .footer {
+        height: 90px;
+    }
+    
+    .nav-grid {
+        grid-template-columns: repeat(3, 50px);
+        grid-template-rows: repeat(3, 22px);
+        gap: 6px;
+    }
+    
+    .nav-btn {
+        width: 50px;
+        height: 22px;
+        font-size: 14px;
+    }
+    
+    .center-indicator {
+        width: 16px;
+        height: 16px;
+    }
+}
