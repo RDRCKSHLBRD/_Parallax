@@ -22,10 +22,11 @@ const VIEWPORT = {
 
 const PERSPECTIVE = {
     vanishingPoint: { x: 400, y: 250 },
-    floorDepth: 300,
+    floorDepth: 400,
     ceilingHeight: 200,
-    wallWidth: 350,
-    wallHeight: 400
+    wallWidth: 500,
+    wallHeight: 500,
+    depthScale: 0.8 // How much forward/back movement affects depth
 };
 
 const ROOM_GEOMETRY = {
@@ -153,22 +154,21 @@ function getRelativePosition() {
 
 function calculateRoomGeometry() {
     const pos = getRelativePosition();
-    const distortionFactor = pos.normalizedDistance * 0.3;
     
-    // Calculate perspective distortion based on position
-    const offsetX = (pos.x - WORLD.center) * 15;
-    const offsetY = (pos.y - WORLD.center) * 10;
+    // Calculate perspective shifts based on position
+    const lateralOffset = (pos.x - WORLD.center) * 20; // Left/right movement
+    const depthOffset = (pos.y - WORLD.center) * 15;   // Forward/back movement
     
     // Vanishing point shifts based on player position
-    PERSPECTIVE.vanishingPoint.x = VIEWPORT.centerX + offsetX;
-    PERSPECTIVE.vanishingPoint.y = VIEWPORT.horizon + offsetY;
+    PERSPECTIVE.vanishingPoint.x = VIEWPORT.centerX + lateralOffset;
+    PERSPECTIVE.vanishingPoint.y = VIEWPORT.horizon + (depthOffset * 0.5);
     
-    // Room corners with perspective
-    const roomWidth = PERSPECTIVE.wallWidth;
-    const roomHeight = PERSPECTIVE.wallHeight;
-    const depth = PERSPECTIVE.floorDepth;
+    // Room dimensions adjust based on depth position
+    const depthFactor = 1 + (depthOffset * 0.01);
+    const roomWidth = PERSPECTIVE.wallWidth * depthFactor;
+    const roomHeight = PERSPECTIVE.wallHeight * depthFactor;
     
-    // Front corners (closer to viewer)
+    // Front corners (closer to viewer) - these represent the "room opening"
     const frontLeft = {
         x: VIEWPORT.centerX - roomWidth / 2,
         y: VIEWPORT.centerY + roomHeight / 2
@@ -186,8 +186,8 @@ function calculateRoomGeometry() {
         y: VIEWPORT.centerY - roomHeight / 2
     };
     
-    // Back corners (perspective lines to vanishing point)
-    const perspectiveFactor = 0.6;
+    // Back corners - perspective creates depth illusion
+    const perspectiveFactor = 0.7 + (depthOffset * 0.005); // Depth affects perspective
     const backLeft = {
         x: lerp(frontLeft.x, PERSPECTIVE.vanishingPoint.x, perspectiveFactor),
         y: lerp(frontLeft.y, PERSPECTIVE.vanishingPoint.y, perspectiveFactor)
@@ -258,6 +258,16 @@ function renderRoom() {
     });
     svgElement.appendChild(floor);
     
+    // Add floor measurement line (horizontal line across the floor)
+    const floorMeasureLine = createSVGElement('line', {
+        x1: ROOM_GEOMETRY.floor[0].x,
+        y1: lerp(ROOM_GEOMETRY.floor[0].y, ROOM_GEOMETRY.floor[3].y, 0.7),
+        x2: ROOM_GEOMETRY.floor[1].x,
+        y2: lerp(ROOM_GEOMETRY.floor[1].y, ROOM_GEOMETRY.floor[2].y, 0.7),
+        class: 'floor-measurement-line'
+    });
+    svgElement.appendChild(floorMeasureLine);
+    
     // Render walls (back first for proper layering)
     const backWall = createSVGElement('path', {
         d: pointsToPath(ROOM_GEOMETRY.walls.back),
@@ -285,17 +295,17 @@ function renderRoom() {
     svgElement.appendChild(ceiling);
     
     // Render perspective lines (optional - for debugging)
-    renderPerspectiveLines();
+    // renderPerspectiveLines();
     
-    // Render horizon line
-    const horizonLine = createSVGElement('line', {
-        x1: '0',
-        y1: PERSPECTIVE.vanishingPoint.y,
-        x2: VIEWPORT.width,
-        y2: PERSPECTIVE.vanishingPoint.y,
-        class: 'horizon-line'
-    });
-    svgElement.appendChild(horizonLine);
+    // Render horizon line (optional - for debugging)
+    // const horizonLine = createSVGElement('line', {
+    //     x1: '0',
+    //     y1: PERSPECTIVE.vanishingPoint.y,
+    //     x2: VIEWPORT.width,
+    //     y2: PERSPECTIVE.vanishingPoint.y,
+    //     class: 'horizon-line'
+    // });
+    // svgElement.appendChild(horizonLine);
 }
 
 function renderPerspectiveLines() {
