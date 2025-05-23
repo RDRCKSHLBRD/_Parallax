@@ -9,8 +9,9 @@ const WORLD = {
         x: 5,
         y: 5,
     },
-    roomHeight: 4.5,  // <<< INCREASED WALL HEIGHT FURTHER
-    floorLevelY: 0
+    roomHeight: 4.0,  // Slightly increased again for a bit more vertical space
+    floorLevelY: 0,
+    wallProximityOffset: 0.5 // <<< NEW: Player stops this far from the actual wall coordinate
 };
 
 const VIEWPORT = {
@@ -21,9 +22,9 @@ const VIEWPORT = {
 };
 
 const PERSPECTIVE = {
-    focalLength: 290,   // Slightly adjusted based on taller room potentially
-    eyeHeight: 1.3,     // Adjusted slightly with taller room
-    nearClipZ: 0.25,    // Adjusted slightly
+    focalLength: 300,   // Maintained from good visual
+    eyeHeight: 1.2,     // Maintained
+    nearClipZ: 0.25,    // Maintained
     baseFontSize: 12,
     fontPerspectiveFactor: 0.85,
     labelOffsetFromLine: 15
@@ -99,6 +100,7 @@ function calculateProjectedGeometry() {
     const rHeight = WORLD.roomHeight;
     const fLevel = WORLD.floorLevelY;
 
+    // Define 3D corner points with consistent IDs
     const floorCorners3D = [
         { id: 'fl_far_l', x: 0, y: fLevel, z: 0 }, { id: 'fl_far_r', x: wMax, y: fLevel, z: 0 },
         { id: 'fl_near_r', x: wMax, y: fLevel, z: wMax }, { id: 'fl_near_l', x: 0, y: fLevel, z: wMax }
@@ -108,34 +110,39 @@ function calculateProjectedGeometry() {
         { id: 'cl_near_r', x: wMax, y: fLevel + rHeight, z: wMax }, { id: 'cl_near_l', x: 0, y: fLevel + rHeight, z: wMax }
     ];
 
-    ROOM_GEOMETRY.projectedFloorCorners = floorCorners3D.map(p => projectToScreen(p.x, p.y, p.z));
-    ROOM_GEOMETRY.projectedCeilingCorners = ceilingCorners3D.map(p => projectToScreen(p.x, p.y, p.z));
+    // Store all projected points, even if null, mapping by ID for easier wall construction
+    const allProjectedPoints = {};
+    floorCorners3D.forEach(p => allProjectedPoints[p.id] = projectToScreen(p.x, p.y, p.z));
+    ceilingCorners3D.forEach(p => allProjectedPoints[p.id] = projectToScreen(p.x, p.y, p.z));
 
-    const getP = (id, type) => {
-        const sourceArray = type === 'floor' ? floorCorners3D : ceilingCorners3D;
-        const projectedArray = type === 'floor' ? ROOM_GEOMETRY.projectedFloorCorners : ROOM_GEOMETRY.projectedCeilingCorners;
-        const index = sourceArray.findIndex(p => p.id === id);
-        return (index !== -1) ? projectedArray[index] : null;
-    };
+    ROOM_GEOMETRY.projectedFloorCorners = [
+        allProjectedPoints['fl_far_l'], allProjectedPoints['fl_far_r'],
+        allProjectedPoints['fl_near_r'], allProjectedPoints['fl_near_l']
+    ];
+    ROOM_GEOMETRY.projectedCeilingCorners = [
+        allProjectedPoints['cl_far_l'], allProjectedPoints['cl_far_r'],
+        allProjectedPoints['cl_near_r'], allProjectedPoints['cl_near_l']
+    ];
 
-    const p_fl_far_l = getP('fl_far_l', 'floor');
-    const p_fl_far_r = getP('fl_far_r', 'floor');
-    const p_cl_far_l = getP('cl_far_l', 'ceiling');
-    const p_cl_far_r = getP('cl_far_r', 'ceiling');
-    ROOM_GEOMETRY.projectedWalls.north = [p_fl_far_l, p_fl_far_r, p_cl_far_r, p_cl_far_l];
+    // Define Walls using the consistently ordered projected points
+    ROOM_GEOMETRY.projectedWalls.north = [
+        allProjectedPoints['fl_far_l'], allProjectedPoints['fl_far_r'],
+        allProjectedPoints['cl_far_r'], allProjectedPoints['cl_far_l']
+    ];
+    ROOM_GEOMETRY.projectedWalls.west = [ // Near-Left Floor, Far-Left Floor, Far-Left Ceiling, Near-Left Ceiling
+        allProjectedPoints['fl_near_l'], allProjectedPoints['fl_far_l'],
+        allProjectedPoints['cl_far_l'], allProjectedPoints['cl_near_l']
+    ];
+    ROOM_GEOMETRY.projectedWalls.east = [ // Near-Right Floor, Far-Right Floor, Far-Right Ceiling, Near-Right Ceiling
+        allProjectedPoints['fl_near_r'], allProjectedPoints['fl_far_r'],
+        allProjectedPoints['cl_far_r'], allProjectedPoints['cl_near_r']
+    ];
 
-    const p_fl_near_l = getP('fl_near_l', 'floor');
-    const p_cl_near_l = getP('cl_near_l', 'ceiling');
-    ROOM_GEOMETRY.projectedWalls.west = [p_fl_near_l, p_fl_far_l, p_cl_far_l, p_cl_near_l];
-
-    const p_fl_near_r = getP('fl_near_r', 'floor');
-    const p_cl_near_r = getP('cl_near_r', 'ceiling');
-    ROOM_GEOMETRY.projectedWalls.east = [p_fl_near_r, p_fl_far_r, p_cl_far_r, p_cl_near_r];
-
+    // Calculate 2D Grid Lines
     ROOM_GEOMETRY.projectedGridLines = [];
     const numGridLines = WORLD.size;
 
-    for (let i = 0; i < numGridLines; i++) {
+    for (let i = 0; i < numGridLines; i++) { // Horizontal lines (Z-depth)
         const worldZ = i;
         const p1_h = projectToScreen(0, fLevel, worldZ);
         const p2_h = projectToScreen(wMax, fLevel, worldZ);
@@ -143,38 +150,29 @@ function calculateProjectedGeometry() {
             ROOM_GEOMETRY.projectedGridLines.push({ start: p1_h, end: p2_h, worldValue: i, type: 'horizontal', avgDepth: (p1_h.depth + p2_h.depth) / 2 });
         }
     }
-    for (let i = 0; i < numGridLines; i++) {
+    for (let i = 0; i < numGridLines; i++) { // Vertical lines (X-width)
         const worldX = i;
-        const p1_v = projectToScreen(worldX, fLevel, 0);     // Far end of vertical line
-        let p2_v = projectToScreen(worldX, fLevel, wMax);  // Near end of vertical line
-
-        if (p1_v) { // If the far point is visible, we'll try to draw the line
-            if (!p2_v) {
-                // If near point is clipped, estimate its position at the bottom of the viewport
-                // This is a simplification for visibility. A true 3D clip would be more complex.
-                // Project a point very slightly in front of the near clip plane along the line's direction
-                const nearClipWorldZ = WORLD.player.y - (PERSPECTIVE.nearClipZ + 0.01);
-                if (nearClipWorldZ < wMax && nearClipWorldZ > 0) { // Ensure it's within world bounds
-                     p2_v = projectToScreen(worldX, fLevel, nearClipWorldZ);
-                }
-                // If still null, or we want to force it to screen edge:
-                if (!p2_v) {
-                    // Estimate X at bottom based on p1_v and vanishing point for a crude line extension
-                    const vpX = VIEWPORT.centerX; // Assuming vanishing point X is center for this crude extension
-                    const slope = (VIEWPORT.height - p1_v.y) / ( (p1_v.x - vpX) !== 0 ? (p1_v.x - vpX) : 0.0001); // Avoid div by zero
-                    let xAtBottom = p1_v.x - (p1_v.y - VIEWPORT.height) / slope;
-                     xAtBottom = clamp(xAtBottom, -VIEWPORT.width, VIEWPORT.width * 2); // Clamp to avoid extreme values
-                    p2_v = { x: xAtBottom, y: VIEWPORT.height - 1, depth: PERSPECTIVE.nearClipZ };
-                }
-            }
-            // Ensure p2_v is not null before pushing
-            if (p2_v) {
-                 ROOM_GEOMETRY.projectedGridLines.push({ start: p1_v, end: p2_v, worldValue: i, type: 'vertical', avgDepth: (p1_v.depth + p2_v.depth) / 2 });
+        const p1_v = projectToScreen(worldX, fLevel, 0);    // Far end
+        const p2_v = projectToScreen(worldX, fLevel, wMax); // Near end
+        
+        if (p1_v && p2_v) { // Strict: Both ends must be visible
+            ROOM_GEOMETRY.projectedGridLines.push({ start: p1_v, end: p2_v, worldValue: i, type: 'vertical', avgDepth: (p1_v.depth + p2_v.depth) / 2 });
+        }
+        // More lenient: if far end is visible, try to draw towards near clip plane
+        else if (p1_v && !p2_v) {
+            // Project a point just in front of the near clip plane along the line's intended path
+            const nearClipWorldZ = WORLD.player.y - (PERSPECTIVE.nearClipZ + 0.01);
+            if (nearClipWorldZ < wMax && nearClipWorldZ > 0) { // Check if this Z is within world bounds
+                 const p2_v_clipped = projectToScreen(worldX, fLevel, nearClipWorldZ);
+                 if (p2_v_clipped) {
+                    ROOM_GEOMETRY.projectedGridLines.push({ start: p1_v, end: p2_v_clipped, worldValue: i, type: 'vertical', avgDepth: (p1_v.depth + p2_v_clipped.depth) / 2 });
+                 }
             }
         }
     }
     ROOM_GEOMETRY.projectedGridLines.sort((a, b) => b.avgDepth - a.avgDepth);
 }
+
 
 function pointsToPathString(pointsArray, closePath = false) {
     const validPoints = pointsArray.filter(p => p !== null);
@@ -191,7 +189,7 @@ function pointsToPathString(pointsArray, closePath = false) {
 // RENDERING (Includes refined label logic)
 // ========================================
 function updatePositionDisplay() {
-    positionText.textContent = `${WORLD.player.x},${WORLD.player.y}`;
+    positionText.textContent = `${WORLD.player.x.toFixed(1)},${WORLD.player.y.toFixed(1)}`; // Show decimals for proximity
 }
 
 function clearSVG() {
@@ -201,32 +199,34 @@ function clearSVG() {
 function renderScene() {
     clearSVG();
     const drawOrder = [];
+    const labelsToDraw = [];
 
-    if (ROOM_GEOMETRY.projectedFloorCorners.filter(p => p !== null).length >= 3) {
-        drawOrder.push({ type: 'path', d: pointsToPathString(ROOM_GEOMETRY.projectedFloorCorners, true), class: 'room-floor', depth: Infinity });
-    }
-    if (ROOM_GEOMETRY.projectedWalls.north.filter(p => p !== null).length >= 3) {
-         drawOrder.push({ type: 'path', d: pointsToPathString(ROOM_GEOMETRY.projectedWalls.north, true), class: 'room-wall-back', depth: WORLD.player.y - 0 });
-    }
+    const addShapeToDrawOrder = (shapeType, points, cssClass, depth, isClosed = true) => {
+        const validPoints = points.filter(p => p !== null);
+        if (validPoints.length >= (isClosed ? 3 : 2)) {
+            drawOrder.push({
+                type: 'path',
+                d: pointsToPathString(points, isClosed),
+                class: cssClass,
+                depth: depth
+            });
+        }
+    };
     
+    // Add shapes to draw order
+    addShapeToDrawOrder('floor', ROOM_GEOMETRY.projectedFloorCorners, 'room-floor', Infinity, true);
+    addShapeToDrawOrder('northWall', ROOM_GEOMETRY.projectedWalls.north, 'room-wall-back', WORLD.player.y - 0, true); // Depth to Z=0
+    addShapeToDrawOrder('westWall', ROOM_GEOMETRY.projectedWalls.west, 'room-wall-left', Math.abs(WORLD.player.x - 0) + Math.abs(WORLD.player.y - (WORLD.size-1)/2), true);
+    addShapeToDrawOrder('eastWall', ROOM_GEOMETRY.projectedWalls.east, 'room-wall-right', Math.abs(WORLD.player.x - (WORLD.size-1)) + Math.abs(WORLD.player.y - (WORLD.size-1)/2), true);
+    addShapeToDrawOrder('ceiling', ROOM_GEOMETRY.projectedCeilingCorners, 'room-ceiling', -Infinity, true);
+
+
     ROOM_GEOMETRY.projectedGridLines.forEach(line => {
         drawOrder.push({ type: 'line', x1: line.start.x, y1: line.start.y, x2: line.end.x, y2: line.end.y, class: 'grid-line', depth: line.avgDepth, labelInfo: { worldValue: line.worldValue, type: line.type, line: line } });
     });
     
-    if (ROOM_GEOMETRY.projectedWalls.west.filter(p => p !== null).length >= 3) {
-        drawOrder.push({ type: 'path', d: pointsToPathString(ROOM_GEOMETRY.projectedWalls.west, true), class: 'room-wall-left', depth: Math.abs(WORLD.player.x - 0) + Math.abs(WORLD.player.y - (WORLD.size-1)/2) }); // Depth based on player proximity
-    }
-    if (ROOM_GEOMETRY.projectedWalls.east.filter(p => p !== null).length >= 3) {
-         drawOrder.push({ type: 'path', d: pointsToPathString(ROOM_GEOMETRY.projectedWalls.east, true), class: 'room-wall-right', depth: Math.abs(WORLD.player.x - (WORLD.size-1)) + Math.abs(WORLD.player.y - (WORLD.size-1)/2) });
-    }
+    drawOrder.sort((a, b) => b.depth - a.depth); // Furthest first
 
-    if (ROOM_GEOMETRY.projectedCeilingCorners.filter(p => p !== null).length >= 3) {
-         drawOrder.push({ type: 'path', d: pointsToPathString(ROOM_GEOMETRY.projectedCeilingCorners, true), class: 'room-ceiling', depth: -Infinity });
-    }
-
-    drawOrder.sort((a, b) => b.depth - a.depth);
-
-    const labelsToDraw = [];
     drawOrder.forEach(item => {
         if (item.type === 'path') {
             svgElement.appendChild(createSVGElement('path', { d: item.d, class: item.class }));
@@ -236,61 +236,60 @@ function renderScene() {
         }
     });
 
+    // Draw labels on top
     labelsToDraw.forEach(info => {
         const {worldValue, type, line} = info;
-        let fontSize, labelX, labelY, pointForLabel;
+        // Ensure line start/end points are valid before trying to use them
+        if (!line.start || !line.end) return;
 
-        const onScreen = (p) => p && p.x >=0 && p.x <= VIEWPORT.width && p.y >=0 && p.y <= VIEWPORT.height;
+        let fontSize, labelX, labelY, pointForLabel;
 
         if (type === 'horizontal') {
             const depthForFontScale = Math.max(PERSPECTIVE.nearClipZ + 0.1, line.avgDepth);
-            fontSize = PERSPECTIVE.baseFontSize * (PERSPECTIVE.focalLength / (PERSPECTIVE.focalLength + depthForFontScale * 1.2)); // Tuned factor
-            fontSize = clamp(fontSize, 5.5, PERSPECTIVE.baseFontSize * 1.5);
+            fontSize = PERSPECTIVE.baseFontSize * (PERSPECTIVE.focalLength / (PERSPECTIVE.focalLength + depthForFontScale * 1.3));
+            fontSize = clamp(fontSize, 5, PERSPECTIVE.baseFontSize * 1.5);
             
-            // Try to place label on the side that is more on-screen or default to left
-            const lineMidX = (line.start.x + line.end.x) / 2;
-            if (lineMidX < VIEWPORT.centerX && line.start.x > 0) { // Line tends left, label on left start
-                 labelX = line.start.x - PERSPECTIVE.labelOffsetFromLine;
-            } else if (lineMidX >= VIEWPORT.centerX && line.end.x < VIEWPORT.width){ // Line tends right, label on right end
-                 labelX = line.end.x + PERSPECTIVE.labelOffsetFromLine;
-            } else { // Default to left if start is on screen
-                 labelX = line.start.x - PERSPECTIVE.labelOffsetFromLine;
-            }
-            labelY = line.start.y;
+            const lineMidXProjected = (line.start.x + line.end.x) / 2;
+            const lineOnLeft = lineMidXProjected < VIEWPORT.centerX;
 
-            if ((worldValue === 0 || worldValue === (WORLD.size - 1) || fontSize > 7) &&
+            if(lineOnLeft) {
+                 labelX = line.start.x - PERSPECTIVE.labelOffsetFromLine;
+            } else {
+                 labelX = line.end.x + PERSPECTIVE.labelOffsetFromLine;
+            }
+            labelY = (line.start.y + line.end.y) / 2; // Center Y of the line
+
+            if ((worldValue === 0 || worldValue === (WORLD.size - 1) || fontSize > 6) &&
                 (labelX > 5 && labelX < VIEWPORT.width - 5 && labelY > 20 && labelY < VIEWPORT.height - 20)) {
                 svgElement.appendChild(createSVGElement('text', {
                     x: labelX, y: labelY, class: 'grid-label',
-                    style: `font-size: ${fontSize.toFixed(1)}px; text-anchor: middle;`
+                    style: `font-size: ${fontSize.toFixed(1)}px; text-anchor: ${lineOnLeft ? 'end' : 'start'};`
                 })).textContent = String(worldValue);
             }
         } else { // Vertical
-            // Determine which end of the line is closer to the bottom of the screen (larger Y)
-            pointForLabel = line.start.y > line.end.y ? line.start : line.end;
-            // If that point is off-screen high, use the other point.
+            pointForLabel = line.start.y > line.end.y ? line.start : line.end; // Closer (larger Y) end
             if (pointForLabel.y < PERSPECTIVE.baseFontSize * 2 && (line.start.y < line.end.y ? line.start : line.end).y > pointForLabel.y) {
                 pointForLabel = line.start.y < line.end.y ? line.start : line.end;
             }
 
             fontSize = PERSPECTIVE.baseFontSize * 0.9;
             labelX = pointForLabel.x;
-            labelY = pointForLabel.y + PERSPECTIVE.labelOffsetFromLine; // Place below the chosen end point
+            // Place label below the "closest" screen point of the vertical line
+            labelY = Math.max(pointForLabel.y, line.end.y) + PERSPECTIVE.labelOffsetFromLine; 
             
-            // Adjust if label goes off bottom
-            if (labelY > VIEWPORT.height - PERSPECTIVE.baseFontSize / 2) {
-                labelY = pointForLabel.y - PERSPECTIVE.labelOffsetFromLine; // Place above if below is off-screen
-            }
-             if (labelY < PERSPECTIVE.baseFontSize) labelY = PERSPECTIVE.baseFontSize;
+            if (labelY > VIEWPORT.height - PERSPECTIVE.baseFontSize / 2) labelY = Math.max(pointForLabel.y, line.end.y) - PERSPECTIVE.labelOffsetFromLine;
+            if (labelY < PERSPECTIVE.baseFontSize) labelY = PERSPECTIVE.baseFontSize;
 
-
-            if (worldValue === 0 || worldValue === (WORLD.size - 1) || // Always show edge labels
-               (labelX > PERSPECTIVE.labelOffsetFromLine && labelX < VIEWPORT.width - PERSPECTIVE.labelOffsetFromLine &&
-                labelY > PERSPECTIVE.baseFontSize && labelY < VIEWPORT.height - PERSPECTIVE.baseFontSize/2 )) { // Show if reasonably on screen
-                svgElement.appendChild(createSVGElement('text', {
-                    x: labelX, y: labelY, class: 'grid-label',
-                    style: `font-size: ${fontSize.toFixed(1)}px;`
-                })).textContent = String(worldValue);
+            if ((worldValue === 0 || worldValue === (WORLD.size - 1) || Math.abs(WORLD.player.x - worldValue) <=2 ||
+               (labelX > PERSPECTIVE.labelOffsetFromLine && labelX < VIEWPORT.width - PERSPECTIVE.labelOffsetFromLine))) {
+                // Only draw if label is reasonably on screen
+                if (labelY > PERSPECTIVE.baseFontSize && labelY < VIEWPORT.height - PERSPECTIVE.baseFontSize/2 &&
+                    labelX > 0 && labelX < VIEWPORT.width) {
+                     svgElement.appendChild(createSVGElement('text', {
+                        x: labelX, y: labelY, class: 'grid-label',
+                        style: `font-size: ${fontSize.toFixed(1)}px;`
+                    })).textContent = String(worldValue);
+                }
             }
         }
     });
@@ -299,7 +298,7 @@ function renderScene() {
 
 function updateDebugInfo() {
     debugInfo.innerHTML = `
-        Player: (${WORLD.player.x}, ${WORLD.player.y})<br>
+        Player: (${WORLD.player.x.toFixed(1)}, ${WORLD.player.y.toFixed(1)})<br>
         FocalLen: ${PERSPECTIVE.focalLength.toFixed(0)} | EyeH: ${PERSPECTIVE.eyeHeight.toFixed(1)}<br>
         NearClip: ${PERSPECTIVE.nearClipZ.toFixed(1)} | RoomH: ${WORLD.roomHeight.toFixed(1)}<br>
         GridLines Drawn: ${ROOM_GEOMETRY.projectedGridLines.length}
@@ -307,17 +306,25 @@ function updateDebugInfo() {
 }
 
 // ========================================
-// MOVEMENT AND INTERACTION ( 그대로 유지 // Same as before )
+// MOVEMENT AND INTERACTION
 // ========================================
 function movePlayer(direction) {
     let newX = WORLD.player.x;
     let newY = WORLD.player.y;
+    const WPO = WORLD.wallProximityOffset; // Wall Proximity Offset
+    const wMax = WORLD.size - 1;
+
     switch(direction) {
-        case 'forward': newY = Math.max(0, WORLD.player.y - 1); break;
-        case 'back':    newY = Math.min(WORLD.size - 1, WORLD.player.y + 1); break;
-        case 'left':    newX = Math.max(0, WORLD.player.x - 1); break;
-        case 'right':   newX = Math.min(WORLD.size - 1, WORLD.player.x + 1); break;
+        case 'forward': newY -= 1; break;
+        case 'back':    newY += 1; break;
+        case 'left':    newX -= 1; break;
+        case 'right':   newX += 1; break;
     }
+
+    // Apply wall proximity clamping
+    newX = clamp(newX, WPO, wMax - WPO);
+    newY = clamp(newY, WPO, wMax - WPO);
+
     if (newX !== WORLD.player.x || newY !== WORLD.player.y) {
         WORLD.player.x = newX;
         WORLD.player.y = newY;
@@ -386,7 +393,7 @@ function initializeApp() {
     setupEventListeners();
     updatePositionDisplay();
     renderScene();
-    console.log(`Unified Perspective SVG Space V5 Initialized. Player: (${WORLD.player.x}, ${WORLD.player.y})`);
+    console.log(`Unified Perspective SVG Space V6 Initialized. Player: (${WORLD.player.x}, ${WORLD.player.y})`);
 }
 
 document.addEventListener('DOMContentLoaded', initializeApp);
