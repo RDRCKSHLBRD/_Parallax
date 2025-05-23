@@ -180,30 +180,90 @@ body {
     z-index: 1000;
 }
 
-/* Responsive design */
+/* Mobile/Tablet optimizations */
 @media (max-width: 768px) {
+    /* Prevent zoom on double tap */
+    body {
+        touch-action: manipulation;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
     .header {
         height: 35px;
         padding: 0 15px;
+        touch-action: manipulation;
     }
+    
     .header-content {
         font-size: 12px;
     }
+    
     .main-content {
         margin-top: 35px;
+        touch-action: manipulation;
     }
+    
     .side-nav {
         left: 5px;
         padding: 8px;
+        touch-action: manipulation;
     }
+    
     .nav-grid {
         grid-template-columns: repeat(3, 40px);
         grid-template-rows: repeat(3, 20px);
         gap: 4px;
     }
+    
+    /* Enhanced mobile nav buttons */
     .nav-btn {
         width: 40px;
         height: 20px;
         font-size: 12px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+    
+    /* Prevent text selection on mobile */
+    .nav-btn, .header-content, .debug-info {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+    
+    /* SVG container mobile optimization */
+    .svg-container {
+        touch-action: manipulation;
+    }
+    
+    #space-svg {
+        touch-action: manipulation;
+    }
+}
+
+/* Larger mobile devices */
+@media (max-width: 1024px) and (min-width: 769px) {
+    body {
+        touch-action: manipulation;
+    }
+    
+    .nav-btn {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    .side-nav {
+        touch-action: manipulation;
     }
 }
