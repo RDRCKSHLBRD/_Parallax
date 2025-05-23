@@ -7,8 +7,8 @@
 
 body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
-    background-color: #ECF2E9; /* egyptian */
-    color: #282825; /* Seurat */
+    background-color: #ECF2E9;
+    color: #282825;
     height: 100vh;
     overflow: hidden;
     display: flex;
@@ -22,12 +22,12 @@ body {
     left: 0;
     right: 0;
     height: 40px;
-    background-color: #888b87; /* SilverFox */
+    background-color: #888b87;
     z-index: 1000;
     display: flex;
     align-items: center;
     padding: 0 20px;
-    border-bottom: 1px solid #515151; /* Modern Button */
+    border-bottom: 1px solid #515151;
 }
 
 .header-content {
@@ -36,18 +36,18 @@ body {
     width: 100%;
     font-size: 14px;
     font-weight: 500;
-    color: #ECF2E9; /* egyptian */
+    color: #ECF2E9;
 }
 
 /* Main content */
 .main-content {
     flex: 1;
     margin-top: 40px;
-    margin-bottom: 90px;
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: #343531; /* Floor */
+    background-color: #1c1c1a;
+    overflow: hidden;
 }
 
 .svg-container {
@@ -64,38 +64,36 @@ body {
     background-color: transparent;
 }
 
-/* Footer navigation */
-.footer {
+/* Side Navigation */
+.side-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 100px;
-    width: 200px;
-    background-color: #b7bab5; /* Maybe */
-    z-index: 1000;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-top: 1px solid #515151; /* Modern Button */
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(183, 186, 181, 0.8);
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 1001;
+    border: 1px solid #515151;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
 .nav-grid {
     display: grid;
-    grid-template-columns: repeat(3, 60px);
-    grid-template-rows: repeat(3, 25px);
-    gap: 4px;
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(3, 22px);
+    gap: 5px;
     justify-content: center;
     align-items: center;
 }
 
 .nav-btn {
-    width: 60px;
-    height: 25px;
-    background-color: #9DAA9F; /* NEW-Reed */
-    border: 1px solid #525445; /* St. Etienne */
-    color: #282825; /* Seurat */
-    font-size: 16px;
+    width: 50px;
+    height: 22px;
+    background-color: #9DAA9F;
+    border: 1px solid #525445;
+    color: #282825;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     border-radius: 2px;
@@ -106,60 +104,80 @@ body {
 }
 
 .nav-btn:hover {
-    background-color: #AAB29A; /* Gallery */
+    background-color: #AAB29A;
     transform: translateY(-1px);
 }
 
-.nav-btn:active {
-    background-color: #888e7c; /* Mosco */
+.nav-btn:active, .nav-btn-active-feedback {
+    background-color: #888e7c;
     transform: translateY(0);
 }
 
-
-
 /* SVG Room Elements */
 .room-floor {
-    fill: #343531; /* Floor */
-    stroke: #282825; /* Seurat */
-    stroke-width: 1;
+    fill: #343531;
+    stroke: #282825;
+    stroke-width: 0.5;
 }
 
 .room-ceiling {
-    fill: #e4ead8; /* outerWalls */
-    stroke: #aab29a; /* interiorWall */
+    fill: #e4ead8;
+    stroke: #aab29a;
     stroke-width: 1;
 }
 
 .room-wall-left {
-    fill: #dcddca; /* Amalfi */
-    stroke: #aab29a; /* interiorWall */
+    fill: #dcddca;
+    stroke: #aab29a;
     stroke-width: 1;
 }
 
 .room-wall-right {
-    fill: #CCD1B9; /* Snow Clouds III */
-    stroke: #aab29a; /* interiorWall */
+    fill: #CCD1B9;
+    stroke: #aab29a;
     stroke-width: 1;
 }
 
 .room-wall-back {
-    fill: #b8bca7; /* Placeholder II */
-    stroke: #aab29a; /* interiorWall */
+    fill: #b8bca7;
+    stroke: #aab29a;
     stroke-width: 1;
-}
-
-
-.floor-measurement-line {
-    stroke: #aab29a; /* interiorWall */
-    stroke-width: 1;
-    fill: none;
-    opacity: 0.7;
 }
 
 .horizon-line {
-    stroke: #a5a2a2; /* Tech Support */
-    stroke-width: 1;
+    stroke: #ff0000;
+    stroke-width: 0.5;
     fill: none;
+    opacity: 0.3;
+}
+
+.grid-line {
+    stroke: #7a7d78;
+    stroke-width: 0.75;
+    fill: none;
+}
+
+.grid-label {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    fill: #ECF2E9;
+    text-anchor: middle;
+    dominant-baseline: central;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Debug info */
+.debug-info {
+    position: fixed;
+    top: 50px;
+    right: 10px;
+    background-color: rgba(0,0,0,0.7);
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 1000;
 }
 
 /* Responsive design */
@@ -168,31 +186,24 @@ body {
         height: 35px;
         padding: 0 15px;
     }
-    
     .header-content {
         font-size: 12px;
     }
-    
     .main-content {
         margin-top: 35px;
-        margin-bottom: 90px;
     }
-    
-    .footer {
-        height: 90px;
+    .side-nav {
+        left: 5px;
+        padding: 8px;
     }
-    
     .nav-grid {
-        grid-template-columns: repeat(3, 50px);
-        grid-template-rows: repeat(3, 22px);
-        gap: 6px;
+        grid-template-columns: repeat(3, 40px);
+        grid-template-rows: repeat(3, 20px);
+        gap: 4px;
     }
-    
     .nav-btn {
-        width: 50px;
-        height: 22px;
-        font-size: 14px;
+        width: 40px;
+        height: 20px;
+        font-size: 12px;
     }
-    
-    
 }
