@@ -9,7 +9,7 @@ const WORLD = {
         x: 0, // Will be set in initializeWorld
         y: 0  // Will be set in initializeWorld
     },
-    roomHeight: 5.0,  // As per your preference
+    roomHeight: 6.0,  // As per your preference
     floorLevelY: 0,
     wallProximityOffset: 0.5
 };
