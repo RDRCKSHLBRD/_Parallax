@@ -9,7 +9,7 @@ const WORLD = {
         x: 5,
         y: 5,
     },
-    roomHeight: 4.0,  // Slightly increased again for a bit more vertical space
+    roomHeight: 6.0,  // Slightly increased again for a bit more vertical space
     floorLevelY: 0,
     wallProximityOffset: 0.5 // <<< NEW: Player stops this far from the actual wall coordinate
 };
